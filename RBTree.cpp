@@ -1,17 +1,14 @@
-#pragma once
-
+#if 0
 #include<stdio.h>
 #include<iostream>
 using namespace std;
 
-
 enum COLOR{RED,BLACK,};
-
 
 template<class k,class v>
 struct RBTreeNode
 {
-	RBTreeNode(const k& key=k(),const v& value = v(),COLOR color = RED)
+	RBTreeNode(const k& key,const v& value,COLOR color = RED)
 		:_pLeft(NULL)
 		,_pRight(NULL)
 		,_pParent(NULL)
@@ -20,189 +17,36 @@ struct RBTreeNode
 		,_color(color)
 	{}
 
-	k _key;
-	v _value;
-	COLOR _color;
 	RBTreeNode<k,v>* _pLeft;
 	RBTreeNode<k,v>* _pRight;
 	RBTreeNode<k,v>* _pParent;
+	k _key;
+	v _value;
+	COLOR _color;
 };
-
-template<class k,class v,class Ref,class Ptr>
-class RBTreeIterator
-{
-public:
-	typedef RBTreeNode<k,v> Node;
-	typedef RBTreeIterator<k,v,Ref,Ptr> Self;
-
-	RBTreeIterator()
-		:_pNode(NULL)
-	{}
-	RBTreeIterator(Node* pNode1)
-		:pNode(pNode1)
-	{}
-
-	RBTreeIterator(const Self& s)
-		:pNode(s.pNode)
-	{}
-
-	Self& operator++()
-	{
-		_Increase();
-		return *this;
-	}
-
-	Self operator++(int)
-	{
-		Self temp(*this);
-		_Increase();
-		return temp;
-	}
-
-	Self& operator--()
-	{
-		_Decrease();
-		return *this;
-	}
-
-	Self operator--(int)
-	{
-		Self temp(*this);
-		_Decrease();
-		rteurn *this;
-	}
-
-	Ref operator*()
-	{
-		return pNode->_key;
-	}
-	Ptr operator->()
-	{
-		return &(operator*());
-	}
-	bool operator!=(const Self& s)
-	{
-		return pNode!=s.pNode;
-	}
-
-	bool operator==(const Self& s)
-	{
-		return pNode==s.pNode;
-	}
-
-private:
-	void _Increase()
-	{
-		if(pNode->_pRight)
-		{
-			pNode = pNode->_pRight;
-			while(pNode->_pLeft)
-				pNode = pNode->_pLeft;
-		}
-		else
-		{
-			Node* pParent = pNode->_pParent;
-			while(pParent->_pRight == pNode)
-			{
-				pNode = pParent;
-				pParent = pNode->_pParent;
-			}
-			if(pNode->_pRight != pParent)
-				 pNode = pParent;
-		}
-	}
-
-	void _Decrease()
-	{
-		if(pNode->_pParent->_pParent == pNode && pNode->_color == RED)
-		{
-			pNode = pNode->_pRight;
-		}
-		else if(pNode->_pLeft)
-		{
-			pNode = pNode->_pLeft;
-			while(pNode->_pRight)
-				pNode = pNode->_pRight;
-		}
-		else
-		{
-			Node* pParent = pNode->_pParent;
-			while(pParent->_pLeft == pNode)
-			{
-				pNode = pParent;
-				pParent = pNode->_pParent;
-			}
-			pNode = pParent;
-		}
-	}
-
-//private:
-	public:
-	Node* pNode;
-};
-
 template<class k,class v>
 class RBTree
 {
 public:
 	typedef RBTreeNode<k,v> Node;
-	typedef RBTreeIterator<k,v,k&,k*> Iterator;
 	RBTree()
-	{
-		_pHead = new Node;
-		_pHead->_pLeft = _pHead;
-		_pHead->_pRight = _pHead;
-		_pHead->_pParent = NULL;
-	}
+		:_pRoot(NULL)
+	{}
 
 	bool Insert(const k& key,const v& value)
 	{
 		return _Insert(key,value);
 	}
 
-	Iterator Begin()
-	{
-		return Iterator(_pHead->_pLeft);
-	}
-
-	Iterator End()
-	{
-		return Iterator(_pHead);
-	}
-
-	bool Empty()
-	{
-		if(_pHead->_pParent == NULL)
-			return true;
-		return false;
-	}
-
-	Iterator Find(const k& key)
-	{
-		Node* pCur = _pHead->_pParent;
-		while(pCur)
-		{
-			if(pCur->_key > key)
-				pCur = pCur->_pLeft;
-			else if(pCur->_key < key)
-				pCur = pCur->_pRight;
-			else
-				return Iterator(pCur);
-		}
-		return Iterator(NULL);
-	}
-
-
 	void InOrder()
 	{
 		cout<<"InOrder: ";
-		_InOrder(_pHead->_pParent);
+		_InOrder(_pRoot);
 		cout<<endl;
 	}
 
 	bool CheckRBTree()
 	{
-		Node*& _pRoot = _pHead->_pParent;
 		if(_pRoot == NULL)
 			return true;
 		if(_pRoot->_pLeft == NULL && _pRoot->_pRight == NULL)
@@ -225,176 +69,8 @@ public:
 		int k = 0;
 		return _CheckRBTree(_pRoot,blackcount,k);
 	}
+
 private:
-	bool _Insert(const k& key,const v& value)
-	{
-		Node* &pRoot = _pHead->_pParent;
-		if(pRoot == NULL)
-		{
-			pRoot = new Node(key,value,BLACK);
-			pRoot->_pParent = _pHead;
-			_pHead->_pParent = pRoot;
-		}
-
-		//查找要插入节点的位置
-		Node* pNode = pRoot;
-		Node* pParent = NULL;
-		while(pNode)
-		{
-			if(pNode->_key > key)
-			{
-				pParent= pNode;
-				pNode = pNode->_pLeft;
-			}
-			else if(pNode->_key < key)
-			{
-				pParent = pNode;
-				pNode = pNode->_pRight;
-			}
-			else
-				return false;//insert_unique
-		}
-
-		pNode = new Node(key,value);
-		if(pParent->_key > key)
-		{
-			pParent->_pLeft = pNode;
-			pNode->_pParent = pParent;
-		}
-		else
-		{
-			pParent->_pRight = pNode;
-			pNode->_pParent = pParent;
-		}
-
-		//插入后根据情况的不同需要进行调整
-
-		while(pParent  && pParent->_color == RED && (pNode != pRoot))
-		{
-			Node* grandfather = pParent->_pParent;
-			if(grandfather && grandfather->_pLeft == pParent)
-			{
-				Node* pUncle = grandfather->_pRight;
-				if(pUncle && pUncle->_color == RED)
-				{
-					pUncle->_color = BLACK;
-					pParent->_color = BLACK;
-					pNode->_color = RED;
-
-					pNode = grandfather;
-					pParent = pNode->_pParent;
-				}
-				else
-				{
-					if(pUncle && pUncle->_color == BLACK && pParent->_pRight == pNode)
-					{
-						_RotateL(pParent);
-						swap(pNode,pParent);
-					}
-					pParent->_color = BLACK;
-					grandfather->_color = RED;
-					_RotateR(grandfather);
-				}
-			}
-			else
-			{
-				Node* pUncle = grandfather->_pLeft;
-				if(pUncle && pUncle->_color == RED)
-				{
-					pUncle->_color = BLACK;
-					pParent->_color = BLACK;
-					grandfather->_color = RED;
-
-					pNode = grandfather;
-					pParent = pNode->_pParent;
-				}
-				else
-				{
-					if(pUncle && pUncle->_color == BLACK && pParent->_pLeft == pNode)
-					{
-						_RotateR(pParent);
-						swap(pNode,pParent);
-					}
-					pParent->_color = BLACK;
-					grandfather->_color = RED;
-					_RotateL(grandfather);
-				}
-			}
-		}
-		pRoot->_color = BLACK;//情况一
-		_pHead->_pLeft = GetMinNode();
-		_pHead->_pRight = GetMaxNode();
-		return true;
-	}
-
-	Node* GetMinNode()
-	{
-		if(_pHead->_pParent == NULL)
-			return NULL;
-		Node* pCur = _pHead->_pParent;
-		while(pCur->_pLeft)
-			pCur = pCur->_pLeft;
-
-		return pCur;
-	}
-
-	Node* GetMaxNode()
-	{
-		if(_pHead->_pParent == NULL)
-			return NULL;
-		Node* pCur = _pHead->_pParent;
-		while(pCur->_pRight)
-			pCur = pCur->_pRight;
-		return pCur;
-	}
-
-
-
-	void _RotateL(Node*& pParent)
-	{
-		Node* pSubR = pParent->_pRight;
-		Node* pSubRL = pSubR->_pLeft;
-
-		pParent->_pRight = pSubRL;
-		if(pSubRL)
-			pSubRL->_pParent = pParent;
-		pSubR->_pLeft = pParent;
-		Node* pPParent = pParent->_pParent;
-		pParent->_pParent = pSubR;
-
-		pSubR->_pParent = pPParent;
-		if(pPParent == _pHead)
-		{
-			_pHead->_pParent = pSubR;
-
-		}
-		else if(pPParent->_pLeft == pParent)
-			pPParent->_pLeft = pSubR;
-		else 
-			pPParent->_pRight = pSubR;
-	}
-
-	void _RotateR(Node*& pParent)
-	{
-		Node* pSubL = pParent->_pLeft;
-		Node* pSubLR = pSubL->_pRight;
-
-		pParent->_pLeft = pSubLR;
-		if(pSubLR)
-			pSubLR->_pParent = pParent;
-		pSubL->_pRight = pParent;
-		Node* pPParent = pParent->_pParent;
-		pParent->_pParent = pSubL;
-
-		pSubL->_pParent = pPParent;
-		if(pPParent==NULL)
-			_pHead->_pParent = pSubL;
-		else if(pPParent->_pLeft == pParent)
-			pPParent->_pLeft = pSubL;
-		else
-			pPParent->_pRight = pSubL;
-	}
-
 	bool _CheckRBTree(Node* pRoot,int blackcount,int k)
 	{
 		if(pRoot == NULL)
@@ -417,7 +93,6 @@ private:
 		}
 		return _CheckRBTree(pRoot->_pLeft,blackcount,k)&&_CheckRBTree(pRoot->_pRight,blackcount,k);
 	}
-
 	void _InOrder(Node* pRoot)
 	{
 		if(pRoot == NULL)
@@ -426,8 +101,223 @@ private:
 		cout<<pRoot->_key<<" ";
 		_InOrder(pRoot->_pRight);
 	}
+	bool _Insert(const k& key,const v& value)
+	{
+		if(_pRoot == NULL)
+		{
+			_pRoot = new Node(key,value,BLACK);
+			return true;
+		}
+		//找到要节点删除的位置
+		Node* pNode = _pRoot;
+		Node* pParent = NULL;
+		while(pNode)
+		{
+			if(pNode->_key > key)
+			{
+				pParent = pNode;
+				pNode = pNode->_pLeft;
+			}
+			else if(pNode->_key < key)
+			{
+				pParent = pNode;
+				pNode = pNode->_pRight;
+			}
+			else 
+			{
+				return false;//找到key值节点，不用插入，直接退出
+			}
+		}
 
+		//已经找到
+		pNode = new Node(key,value);
+		if(pParent->_key > key)
+		{
+			pParent->_pLeft = pNode;
+			pNode->_pParent = pParent;
+		}
+		else
+		{
+			pParent->_pRight = pNode;
+			pNode->_pParent = pParent;
+		}
+
+		//对红黑树进行调整
+
+		
+		while(pParent && pParent->_color == RED && pNode->_color == RED)
+		{
+			Node* grandFather = pParent->_pParent;
+			Node* pUncle = NULL;
+
+			////找到pUncle节点
+			//if(grandFather->_pLeft == pParent)
+			//	pUncle = grandFather->_pRight;
+			//else
+			//	pUncle = grandFather->_pLeft;
+
+			if(grandFather->_pLeft == pParent)//节点插在左子树
+			{
+				pUncle = grandFather->_pRight;
+				if(pUncle && pUncle->_color == RED)//情况一
+				{
+					pUncle->_color = BLACK;
+					pParent->_color = BLACK;
+					grandFather->_color = RED;
+
+					pNode = grandFather;
+					pParent = grandFather->_pParent;
+
+				}
+				
+				else//在处理情况三的过程中顺便处理情况二
+				{
+					if(pParent && pParent->_pRight == pNode)
+					{
+						//先左旋再右旋
+						_RotateL(pParent);
+						swap(pNode,pParent);
+					}
+					grandFather->_color = RED;
+					pParent->_color = BLACK;
+					_RotateR(grandFather);
+				}
+			}
+
+				////情况二
+				//if(pNode->_pLeft == NULL && pNode->_pRight == NULL && pUncle == NULL)//pUncle不存在
+				//{
+				//	return true;
+				//}
+				//else
+				//{
+				//	if(pUncle && pUncle->_color == BLACK)
+				//	{
+				//		//进行右单旋
+				//		_RotateR(grandFather);
+				//		grandFather->_color = RED;
+				//		pParent->_color = BLACK;
+				//	}
+				//}
+
+				////情况三
+				//if(pNode->_pLeft == NULL && pNode->_pRight == NULL && pUncle == NULL)//pUncle不存在
+				//{
+				//	return true;
+				//}
+				//else
+				//{
+				//	if(pUncle && pUncle->_color == BLACK && pParent->_pRight == pNode)
+				//	{
+				//		//先左旋再右旋
+				//		_RotateL(pParent);
+				//		swap(pCur,pParent);
+				//		grandFather->_color = RED;
+				//		pParent->_color = BLACK;
+				//		_RotateR(grandfather);
+				//	}
+				//}
+
+			else
+			{
+				pUncle = grandFather->_pLeft;
+				if(pUncle && pUncle->_color == RED)//情况一
+				{
+					pUncle->_color = BLACK;
+					pParent->_color = BLACK;
+					grandFather->_color = RED;
+
+					pNode = grandFather;
+					pParent = grandFather->_pParent;
+
+					
+				}
+				//在处理情况三的过程中顺便处理情况二
+				
+				else
+				{
+					if(pUncle && pUncle->_color == BLACK && pParent->_pLeft == pNode)//情况三
+					{
+						//先左旋再右旋
+						_RotateR(pParent);
+						swap(pNode,pParent);
+					}
+					grandFather->_color = RED;//情况二
+					pParent->_color = BLACK;
+					_RotateL(grandFather);
+				}
+			}
+		}
+		_pRoot->_color = BLACK;
+	}
+
+	void _RotateL(Node*& pParent)
+	{
+		Node* pSubR = pParent->_pRight;
+		Node* pSubRL = pSubR->_pLeft;
+
+		pParent->_pRight = pSubRL;
+		if(pSubRL)
+			pSubRL->_pParent = pParent;
+		pSubR->_pLeft = pParent;
+		Node* pPParent = pParent->_pParent;
+		pParent->_pParent = pSubR;
+
+		pSubR->_pParent = pPParent;
+		if(pPParent == NULL)
+			_pRoot = pSubR;
+		else if(pPParent->_pLeft == pParent)
+			pPParent->_pLeft = pSubR;
+		else 
+			pPParent->_pRight = pSubR;
+	}
+
+	void _RotateR(Node*& pParent)
+	{
+		Node* pSubL = pParent->_pLeft;
+		Node* pSubLR = pSubL->_pRight;
+
+		pParent->_pLeft = pSubLR;
+		if(pSubLR)
+			pSubLR->_pParent = pParent;
+		pSubL->_pRight = pParent;
+		Node* pPParent = pParent->_pParent;
+		pParent->_pParent = pSubL;
+
+		pSubL->_pParent = pPParent;
+		if(pPParent==NULL)
+			_pRoot = pSubL;
+		else if(pPParent->_pLeft == pParent)
+			pPParent->_pLeft = pSubL;
+		else
+			pPParent->_pRight = pSubL;
+	}
 private:
-	Node* _pHead;
+	Node* _pRoot;
 };
 
+void funtest()
+{
+	RBTree<int ,int> rbt;
+	int array[] = {40,30,60,10,50,80,20,70};
+	for(size_t idx=0; idx<sizeof(array)/sizeof(array[0]); ++idx)
+		rbt.Insert(array[idx],array[idx]);
+	rbt.InOrder();
+	if(rbt.CheckRBTree())
+	{
+		cout<<"该树是红黑树"<<endl;
+	}
+	else
+	{
+		cout<<"该树不是红黑树"<<endl;
+	}
+
+}
+
+int main()
+{
+	funtest();
+	getchar();
+	return 0;
+}
+#endif
